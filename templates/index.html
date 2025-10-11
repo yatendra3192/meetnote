@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#0EA5E9">
+    <title>Meeting Notes AI - Aiezzy</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Aiezzy" class="nav-logo">
+                <span class="nav-page-title">Meeting Notes AI</span>
+            </div>
+            <div class="nav-right">
+                <a href="https://aiezzy.com" class="nav-link">← Back to Aiezzy</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Content -->
+        <main class="main-content-full">
+            <div class="content-wrapper">
+                <!-- Welcome Screen -->
+                <div id="welcomeScreen" class="welcome-screen">
+                    <h2 class="welcome-title">Transform Your Meetings</h2>
+                    <p class="welcome-subtitle">Upload or record the audio to get transcription, summary, and action items instantly</p>
+
+                    <div class="audio-input-container">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-content">
+                                <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <h3>Drop your audio file here</h3>
+                                <p>or click to browse</p>
+                                <p class="upload-formats">Supports MP3, WAV, M4A, FLAC, AAC</p>
+                                <input type="file" id="audioInput" accept=".mp3,.wav,.m4a,.flac,.aac" hidden>
+                            </div>
+                        </div>
+
+                        <button class="record-option-btn" data-mode="system">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                            </svg>
+                            <span>System Audio</span>
+                            <p>Record laptop speakers & app audio</p>
+                        </button>
+
+                        <button class="record-option-btn" data-mode="microphone">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                            <span>Microphone</span>
+                            <p>Record your voice only</p>
+                        </button>
+
+                        <button class="record-option-btn" data-mode="both">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="6"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                            </svg>
+                            <span>System + Mic</span>
+                            <p>Record both system & microphone</p>
+                        </button>
+                    </div>
+
+                    <div id="recordingStatus" class="recording-status" style="display: none;">
+                        <div class="recording-indicator">
+                            <span class="recording-dot"></span>
+                            <span id="recordingTime">00:00</span>
+                        </div>
+                        <button id="stopRecordBtn" class="btn-stop-record">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="6" width="12" height="12"></rect>
+                            </svg>
+                            Stop Recording
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Screen -->
+                <div id="resultsScreen" class="results-screen" style="display: none;">
+                    <div class="results-header">
+                        <button id="newMeetingBtn" class="btn-secondary">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                            New Meeting
+                        </button>
+                    </div>
+
+                    <!-- Audio Playback -->
+                    <div class="audio-playback-section">
+                        <div class="audio-playback-card">
+                            <div class="audio-info">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18V5l12-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="18" cy="16" r="3"></circle>
+                                </svg>
+                                <span id="audioFileName">Audio File</span>
+                            </div>
+                            <audio id="audioPlayer" controls></audio>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="transcription">📝 Transcription</button>
+                        <button class="tab-btn" data-tab="summary">📋 Summary</button>
+                        <button class="tab-btn" data-tab="actionItems">✅ Action Items</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div id="transcriptionTab" class="tab-pane active">
+                            <div class="result-header">
+                                <h3>Transcription</h3>
+                                <button class="btn-download" data-content="transcription">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download
+                                </button>
+                            </div>
+                            <div class="result-content" id="transcriptionContent"></div>
+                        </div>
+
+                        <div id="summaryTab" class="tab-pane">
+                            <div class="result-header">
+                                <h3>Summary</h3>
+                                <button class="btn-download" data-content="summary">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download
+                                </button>
+                            </div>
+                            <div class="result-content" id="summaryContent"></div>
+                        </div>
+
+                        <div id="actionItemsTab" class="tab-pane">
+                            <div class="result-header">
+                                <h3>Action Items</h3>
+                                <button class="btn-download" data-content="actionItems">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download
+                                </button>
+                            </div>
+                            <div class="result-content" id="actionItemsContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Screen -->
+                <div id="loadingScreen" class="loading-screen" style="display: none;">
+                    <div class="loading-content">
+                        <div class="spinner"></div>
+                        <h3>Processing your meeting...</h3>
+                        <p id="loadingMessage">Uploading audio file...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
