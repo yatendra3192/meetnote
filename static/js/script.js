@@ -14,28 +14,36 @@ const audioInputContainer = document.querySelector('.audio-input-container');
 const recordingStatus = document.getElementById('recordingStatus');
 const recordingTime = document.getElementById('recordingTime');
 
-// Tab elements
-const tabButtons = document.querySelectorAll('.tab-btn');
-const tabPanes = document.querySelectorAll('.tab-pane');
-
-// Result content elements
-const transcriptionContent = document.getElementById('transcriptionContent');
-const summaryContent = document.getElementById('summaryContent');
-const actionItemsContent = document.getElementById('actionItemsContent');
+// Options and Results pages
+const optionsPage = document.getElementById('optionsPage');
+const resultsPage = document.getElementById('resultsPage');
+const actionButtons = document.querySelectorAll('.action-btn');
+const processCustomBtn = document.getElementById('processCustomBtn');
+const customPromptInput = document.getElementById('customPrompt');
+const backToOptionsBtn = document.getElementById('backToOptions');
+const resultTitle = document.getElementById('resultTitle');
+const resultContent = document.getElementById('resultContent');
+const downloadResultBtn = document.getElementById('downloadResultBtn');
 
 // Store results for download
 let results = {
     transcription: '',
     summary: '',
-    actionItems: ''
+    actionItems: '',
+    custom: ''
 };
 
 // Processing states - track what's been processed
 let processedStates = {
     transcription: false,
     summary: false,
-    actionItems: false
+    actionItems: false,
+    custom: false
 };
+
+// Current processing state
+let currentProcessType = '';
+let currentCustomPrompt = '';
 
 // Recording variables
 let mediaRecorder;
@@ -79,30 +87,16 @@ uploadArea.addEventListener('drop', (e) => {
     }
 });
 
-// Tab Switching
-tabButtons.forEach(button => {
+// Action Button Clicks
+actionButtons.forEach(button => {
     button.addEventListener('click', async () => {
-        const targetTab = button.getAttribute('data-tab');
-
-        // Remove active class from all tabs and panes
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabPanes.forEach(pane => pane.classList.remove('active'));
-
-        // Add active class to clicked tab and corresponding pane
-        button.classList.add('active');
-        document.getElementById(targetTab + 'Tab').classList.add('active');
-
-        // Process content if not already processed
-        if (currentAudioFile && !processedStates[targetTab]) {
-            await processTab(targetTab);
-        }
+        const type = button.getAttribute('data-type');
+        await processContent(type);
     });
 
-    // Touch feedback for tabs
+    // Touch feedback
     button.addEventListener('touchstart', (e) => {
-        if (!button.classList.contains('active')) {
-            button.style.opacity = '0.7';
-        }
+        button.style.opacity = '0.9';
     }, { passive: true });
 
     button.addEventListener('touchend', (e) => {
@@ -110,22 +104,43 @@ tabButtons.forEach(button => {
     }, { passive: true });
 });
 
-// Download Buttons
-document.querySelectorAll('.btn-download').forEach(button => {
-    button.addEventListener('click', () => {
-        const contentType = button.getAttribute('data-content');
-        downloadContent(contentType);
-    });
-
-    // Touch feedback for download buttons
-    button.addEventListener('touchstart', (e) => {
-        button.style.opacity = '0.8';
-    }, { passive: true });
-
-    button.addEventListener('touchend', (e) => {
-        button.style.opacity = '1';
-    }, { passive: true });
+// Custom Prompt Button
+processCustomBtn.addEventListener('click', async () => {
+    const customPrompt = customPromptInput.value.trim();
+    if (!customPrompt) {
+        alert('Please enter a prompt');
+        return;
+    }
+    await processContent('custom', customPrompt);
 });
+
+// Back to Options Button
+backToOptionsBtn.addEventListener('click', () => {
+    showOptionsPage();
+});
+
+// Touch feedback for custom button
+processCustomBtn.addEventListener('touchstart', (e) => {
+    processCustomBtn.style.opacity = '0.9';
+}, { passive: true });
+
+processCustomBtn.addEventListener('touchend', (e) => {
+    processCustomBtn.style.opacity = '1';
+}, { passive: true });
+
+// Download Button
+downloadResultBtn.addEventListener('click', () => {
+    downloadCurrentResult();
+});
+
+// Touch feedback for download button
+downloadResultBtn.addEventListener('touchstart', (e) => {
+    downloadResultBtn.style.opacity = '0.8';
+}, { passive: true });
+
+downloadResultBtn.addEventListener('touchend', (e) => {
+    downloadResultBtn.style.opacity = '1';
+}, { passive: true });
 
 // New Meeting Button
 newMeetingBtn.addEventListener('click', () => {
@@ -359,60 +374,70 @@ async function handleFileUpload(file) {
     results = {
         transcription: '',
         summary: '',
-        actionItems: ''
+        actionItems: '',
+        custom: ''
     };
     processedStates = {
         transcription: false,
         summary: false,
-        actionItems: false
+        actionItems: false,
+        custom: false
     };
 
-    // Clear content areas
-    transcriptionContent.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">Click to generate transcription</p>';
-    summaryContent.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">Click to generate summary</p>';
-    actionItemsContent.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">Click to extract action items</p>';
+    currentProcessType = '';
+    currentCustomPrompt = '';
 
-    // Show results screen immediately
+    // Clear custom prompt input
+    customPromptInput.value = '';
+
+    // Show results screen with options page
     showScreen('results');
+    showOptionsPage();
 }
 
-// Process individual tab content
-async function processTab(tabName) {
+// Process content based on type or custom prompt
+async function processContent(type, customPrompt = '') {
     if (!currentAudioFile) return;
 
-    const contentMap = {
-        transcription: transcriptionContent,
-        summary: summaryContent,
-        actionItems: actionItemsContent
-    };
-
-    const promptMap = {
-        transcription: 'Please transcribe this meeting audio.',
-        summary: 'Based on this meeting audio, provide a comprehensive summary:',
-        actionItems: 'Extract all action items from this meeting audio. If no action items are found, say "No action items identified."'
+    const titleMap = {
+        transcription: 'Transcription',
+        summary: 'Summary',
+        actionItems: 'Action Items',
+        custom: 'Custom Analysis'
     };
 
     const loadingMessages = {
         transcription: 'Transcribing audio...',
         summary: 'Generating summary...',
-        actionItems: 'Extracting action items...'
+        actionItems: 'Extracting action items...',
+        custom: 'Processing your request...'
     };
 
-    const contentElement = contentMap[tabName];
+    // Store current process info
+    currentProcessType = type;
+    if (type === 'custom') {
+        currentCustomPrompt = customPrompt;
+    }
+
+    // Show results page with loading
+    showResultsPage(titleMap[type]);
 
     try {
-        // Show loading state in the tab
-        contentElement.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem;">
+        // Show loading state
+        resultContent.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; min-height: 300px;">
                 <div class="spinner" style="margin-bottom: 1rem;"></div>
-                <p style="color: #64748b;">${loadingMessages[tabName]}</p>
+                <p style="color: #64748b;">${loadingMessages[type]}</p>
             </div>
         `;
 
-        // Process the specific content
+        // Process the content
         const formData = new FormData();
         formData.append('audio', currentAudioFile);
-        formData.append('type', tabName);
+        formData.append('type', type);
+        if (type === 'custom') {
+            formData.append('customPrompt', customPrompt);
+        }
 
         const response = await fetch('/api/process-audio-single', {
             method: 'POST',
@@ -427,21 +452,70 @@ async function processTab(tabName) {
         const data = await response.json();
 
         // Store and display result
-        results[tabName] = data.result;
-        contentElement.textContent = data.result;
-        processedStates[tabName] = true;
+        results[type] = data.result;
+        resultContent.textContent = data.result;
+        processedStates[type] = true;
 
     } catch (error) {
         console.error('Error:', error);
-        contentElement.innerHTML = `
+        resultContent.innerHTML = `
             <div style="text-align: center; padding: 2rem;">
                 <p style="color: #ef4444; margin-bottom: 1rem;">Error: ${error.message}</p>
-                <button onclick="processTab('${tabName}')" style="padding: 0.5rem 1rem; background: #0EA5E9; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                <button onclick="retryProcessing()" style="padding: 0.75rem 1.5rem; background: #0EA5E9; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 1rem;">
                     Retry
                 </button>
             </div>
         `;
     }
+}
+
+// Retry processing
+function retryProcessing() {
+    if (currentProcessType === 'custom') {
+        processContent(currentProcessType, currentCustomPrompt);
+    } else {
+        processContent(currentProcessType);
+    }
+}
+
+// Show options page
+function showOptionsPage() {
+    optionsPage.style.display = 'block';
+    resultsPage.style.display = 'none';
+}
+
+// Show results page
+function showResultsPage(title) {
+    optionsPage.style.display = 'none';
+    resultsPage.style.display = 'block';
+    resultTitle.textContent = title;
+}
+
+// Download current result
+function downloadCurrentResult() {
+    if (!currentProcessType || !results[currentProcessType]) {
+        alert('No content to download');
+        return;
+    }
+
+    const content = results[currentProcessType];
+    const filenameMap = {
+        transcription: 'transcription.txt',
+        summary: 'summary.txt',
+        actionItems: 'action-items.txt',
+        custom: 'custom-analysis.txt'
+    };
+    const filename = filenameMap[currentProcessType] || 'result.txt';
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // Update Loading Message
@@ -468,37 +542,6 @@ function showScreen(screen) {
     }
 }
 
-// Download Content
-function downloadContent(type) {
-    let content = '';
-    let filename = '';
-
-    switch (type) {
-        case 'transcription':
-            content = results.transcription;
-            filename = 'meeting-transcription.txt';
-            break;
-        case 'summary':
-            content = results.summary;
-            filename = 'meeting-summary.txt';
-            break;
-        case 'actionItems':
-            content = results.actionItems;
-            filename = 'meeting-action-items.txt';
-            break;
-    }
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
 // Reset App
 function resetApp() {
     showScreen('welcome');
@@ -506,13 +549,19 @@ function resetApp() {
     results = {
         transcription: '',
         summary: '',
-        actionItems: ''
+        actionItems: '',
+        custom: ''
     };
     processedStates = {
         transcription: false,
         summary: false,
-        actionItems: false
+        actionItems: false,
+        custom: false
     };
+
+    currentProcessType = '';
+    currentCustomPrompt = '';
+    customPromptInput.value = '';
 
     // Reset audio playback
     const audioPlayer = document.getElementById('audioPlayer');
@@ -522,12 +571,9 @@ function resetApp() {
     }
     currentAudioFile = null;
 
-    // Reset to first tab
-    tabButtons.forEach(btn => btn.classList.remove('active'));
-    tabPanes.forEach(pane => pane.classList.remove('active'));
-    tabButtons[0].classList.add('active');
-    tabPanes[0].classList.add('active');
+    // Show options page by default
+    showOptionsPage();
 }
 
-// Make processTab available globally for retry buttons
-window.processTab = processTab;
+// Make functions available globally for inline onclick handlers
+window.retryProcessing = retryProcessing;

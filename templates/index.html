@@ -118,57 +118,82 @@
                         </div>
                     </div>
 
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="transcription">📝 Transcription</button>
-                        <button class="tab-btn" data-tab="summary">📋 Summary</button>
-                        <button class="tab-btn" data-tab="actionItems">✅ Action Items</button>
+                    <!-- Default State / Options Page -->
+                    <div id="optionsPage" class="options-page">
+                        <h3 style="text-align: center; color: #1e293b; margin-bottom: 2rem;">What would you like to do with this audio?</h3>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons-grid">
+                            <button class="action-btn" data-type="transcription">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Transcription</span>
+                                <p>Convert audio to text</p>
+                            </button>
+
+                            <button class="action-btn" data-type="summary">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                <span>Summary</span>
+                                <p>Get a concise summary</p>
+                            </button>
+
+                            <button class="action-btn" data-type="actionItems">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 11 12 14 22 4"></polyline>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                <span>Action Items</span>
+                                <p>Extract tasks & to-dos</p>
+                            </button>
+                        </div>
+
+                        <!-- Custom Prompt Section -->
+                        <div class="custom-prompt-section">
+                            <div class="divider">
+                                <span>OR</span>
+                            </div>
+                            <label for="customPrompt" style="display: block; margin-bottom: 0.5rem; color: #475569; font-weight: 500;">Custom Prompt:</label>
+                            <textarea id="customPrompt" placeholder="Type what you want to do with this audio... (e.g., 'Extract key points and decisions made', 'Identify speakers and their main arguments', etc.)" rows="3"></textarea>
+                            <button id="processCustomBtn" class="btn-primary">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                Process with Custom Prompt
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="tab-content">
-                        <div id="transcriptionTab" class="tab-pane active">
-                            <div class="result-header">
-                                <h3>Transcription</h3>
-                                <button class="btn-download" data-content="transcription">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    Download
-                                </button>
-                            </div>
-                            <div class="result-content" id="transcriptionContent"></div>
+                    <!-- Results Page -->
+                    <div id="resultsPage" class="results-page-content" style="display: none;">
+                        <div class="result-header">
+                            <button id="backToOptions" class="btn-back">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                                </svg>
+                                Back to Options
+                            </button>
+                            <h3 id="resultTitle">Result</h3>
+                            <button class="btn-download" id="downloadResultBtn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download
+                            </button>
                         </div>
-
-                        <div id="summaryTab" class="tab-pane">
-                            <div class="result-header">
-                                <h3>Summary</h3>
-                                <button class="btn-download" data-content="summary">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    Download
-                                </button>
-                            </div>
-                            <div class="result-content" id="summaryContent"></div>
-                        </div>
-
-                        <div id="actionItemsTab" class="tab-pane">
-                            <div class="result-header">
-                                <h3>Action Items</h3>
-                                <button class="btn-download" data-content="actionItems">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    Download
-                                </button>
-                            </div>
-                            <div class="result-content" id="actionItemsContent"></div>
-                        </div>
+                        <div class="result-content" id="resultContent"></div>
                     </div>
                 </div>
 

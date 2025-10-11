@@ -139,16 +139,24 @@ def process_audio_single():
         }
 
         # Process based on type
-        prompt_map = {
-            'transcription': 'Please transcribe this meeting audio.',
-            'summary': 'Based on this meeting audio, provide a comprehensive summary:',
-            'actionItems': 'Extract all action items from this meeting audio. If no action items are found, say "No action items identified."'
-        }
+        if processing_type == 'custom':
+            # Get custom prompt from request
+            custom_prompt = request.form.get('customPrompt', '')
+            if not custom_prompt:
+                return jsonify({'error': 'Custom prompt is required'}), 400
+            prompt = custom_prompt
+        else:
+            prompt_map = {
+                'transcription': 'Please transcribe this meeting audio.',
+                'summary': 'Based on this meeting audio, provide a comprehensive summary:',
+                'actionItems': 'Extract all action items from this meeting audio. If no action items are found, say "No action items identified."'
+            }
 
-        if processing_type not in prompt_map:
-            return jsonify({'error': 'Invalid processing type'}), 400
+            if processing_type not in prompt_map:
+                return jsonify({'error': 'Invalid processing type'}), 400
 
-        prompt = prompt_map[processing_type]
+            prompt = prompt_map[processing_type]
+
         print(f"Generating {processing_type}...")
         response = model.generate_content([prompt, audio_part])
 
